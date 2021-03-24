@@ -1,5 +1,5 @@
 from .indoor_eval import indoor_eval
-from .kitti_utils import kitti_eval, kitti_eval_coco_style
+from .kitti_utils import kitti_eval, kitti_eval_coco_style, maxus_eval
 from .lyft_eval import lyft_eval
 from .seg_eval import seg_eval
 

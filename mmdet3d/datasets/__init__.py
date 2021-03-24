@@ -14,6 +14,7 @@ from .scannet_dataset import ScanNetDataset
 from .semantickitti_dataset import SemanticKITTIDataset
 from .sunrgbd_dataset import SUNRGBDDataset
 from .waymo_dataset import WaymoDataset
+from .maxus_dataset import MaxusDataset
 
 __all__ = [
     'KittiDataset', 'GroupSampler', 'DistributedGroupSampler',
@@ -22,7 +23,7 @@ __all__ = [
     'RandomFlip3D', 'ObjectNoise', 'GlobalRotScaleTrans', 'PointShuffle',
     'ObjectRangeFilter', 'PointsRangeFilter', 'Collect3D',
     'LoadPointsFromFile', 'NormalizePointsColor', 'IndoorPointSample',
-    'LoadAnnotations3D', 'SUNRGBDDataset', 'ScanNetDataset',
+    'LoadAnnotations3D', 'SUNRGBDDataset', 'ScanNetDataset', 'MaxusDataset'
     'SemanticKITTIDataset', 'Custom3DDataset', 'LoadPointsFromMultiSweeps',
     'WaymoDataset', 'BackgroundPointsFilter', 'VoxelBasedPointSampler'
 ]

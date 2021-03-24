@@ -5,6 +5,7 @@ from tools.data_converter import indoor_converter as indoor
 from tools.data_converter import kitti_converter as kitti
 from tools.data_converter import lyft_converter as lyft_converter
 from tools.data_converter import nuscenes_converter as nuscenes_converter
+from tools.data_converter import maxus_converter as maxus
 from tools.data_converter.create_gt_database import create_groundtruth_database
 
 
@@ -176,6 +177,27 @@ def waymo_data_prep(root_path,
         relative_path=False,
         with_mask=False)
 
+def maxus_data_prep(root_path, info_prefix, version, out_dir):
+    """Prepare data related to Maxus dataset.
+
+    Related data consists of '.pkl' files recording basic infos,
+    2D annotations and groundtruth database.
+
+    Args:
+        root_path (str): Path of dataset root.
+        info_prefix (str): The prefix of info filenames.
+        version (str): Dataset version.
+        out_dir (str): Output directory of the groundtruth database info.
+    """
+    maxus.create_maxus_info_file(root_path, info_prefix)
+    create_groundtruth_database(
+        'MaxusDataset',
+        root_path,
+        info_prefix,
+        f'{out_dir}/{info_prefix}_infos_train.pkl',
+        relative_path=False,
+        mask_anno_path='instances_train.json',
+        with_mask=(version == 'mask'))
 
 parser = argparse.ArgumentParser(description='Data converter arg parser')
 parser.add_argument('dataset', metavar='kitti', help='name of the dataset')
@@ -277,3 +299,9 @@ if __name__ == '__main__':
             info_prefix=args.extra_tag,
             out_dir=args.out_dir,
             workers=args.workers)
+    elif args.dataset == 'maxus':
+        maxus_data_prep(
+            root_path=args.root_path,
+            info_prefix=args.extra_tag,
+            version=args.version,
+            out_dir=args.out_dir)
