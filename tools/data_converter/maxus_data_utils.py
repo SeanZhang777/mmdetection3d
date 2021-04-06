@@ -183,8 +183,8 @@ def get_maxus_image_info(path,
         if pointcloud:
             pc_info['pointcloud_path'] = get_pointcloud_path(
                 idx, path, training, relative_path)
-        image_info['image_path'] = get_image_path(idx, path, training,
-                                                  relative_path)
+        # image_info['image_path'] = get_image_path(idx, path, training, relative_path)
+
         if with_imageshape:
             img_path = image_info['image_path']
             if relative_path:

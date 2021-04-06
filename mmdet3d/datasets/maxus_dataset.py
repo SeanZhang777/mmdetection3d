@@ -108,8 +108,9 @@ class MaxusDataset(Custom3DDataset):
         """
         info = self.data_infos[index]
         sample_idx = info['image']['image_idx']
-        img_filename = os.path.join(self.data_root,
-                                    info['image']['image_path'])
+        # img_filename = os.path.join(self.data_root,
+        #                             info['image']['image_path'])
+        img_filename = None
 
         pts_filename = self._get_pts_filename(sample_idx)
         input_dict = dict(

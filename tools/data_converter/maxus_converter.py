@@ -69,7 +69,8 @@ def create_maxus_info_file(data_path,
         pointcloud=True,
         calib=True,
         image_ids=train_img_ids,
-        relative_path=relative_path)
+        relative_path=relative_path,
+        with_imageshape=False)
     _calculate_num_points_in_gt(data_path, maxus_infos_train, relative_path)
     filename = save_path / f'{pkl_prefix}_infos_train.pkl'
     print(f'Maxus info train file is saved to {filename}')
@@ -80,7 +81,8 @@ def create_maxus_info_file(data_path,
         pointcloud=True,
         calib=True,
         image_ids=val_img_ids,
-        relative_path=relative_path)
+        relative_path=relative_path,
+        with_imageshape=False)
     _calculate_num_points_in_gt(data_path, maxus_infos_val, relative_path)
     filename = save_path / f'{pkl_prefix}_infos_val.pkl'
     print(f'Maxus info val file is saved to {filename}')
