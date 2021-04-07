@@ -866,6 +866,7 @@ def pcdet_box3d_lidar2camera(lidar_box3d):
     camera_h = lidar_box3d[:, 5].reshape(-1, 1)
     camera_w = lidar_box3d[:, 4].reshape(-1, 1)
     camera_r = -(lidar_box3d[:, 6] + np.pi / 2.0).reshape(-1, 1)
+    camera_r = limit_period(camera_r, offset=0.5, period=np.pi*2)
 
     camera_box3d = np.concatenate([camera_x, camera_y, camera_z,
                                    camera_l, camera_h, camera_w, camera_r],
@@ -881,6 +882,7 @@ def pcdet_box3d_camera2lidar(camera_box3d):
     lidar_w = camera_box3d[:, 5].reshape(-1, 1)
     lidar_h = camera_box3d[:, 4].reshape(-1, 1)
     lidar_yaw = (-camera_box3d[:, 6] - np.pi / 2.0).reshape(-1, 1)
+    lidar_yaw = limit_period(lidar_yaw, offset=0.5, period=np.pi*2)
 
     lidar_z += lidar_h / 2.0   # bottom center -> box center
 
@@ -898,6 +900,7 @@ def mmdet3d_box3d_camera_to_lidar(camera_box3d):
     lidar_w = camera_box3d[:, 5].reshape(-1, 1)
     lidar_h = camera_box3d[:, 4].reshape(-1, 1)
     lidar_r = camera_box3d[:, 6].reshape(-1, 1)
+    lidar_r = limit_period(lidar_r, offset=0.5, period=np.pi*2)
 
     lidar_box3d = np.concatenate([lidar_x, lidar_y, lidar_z,
                                   lidar_w, lidar_l, lidar_h, lidar_r],
@@ -913,6 +916,7 @@ def mmdet3d_box3d_lidar_to_camera(lidar_box3d):
     camera_w = lidar_box3d[:, 3].reshape(-1, 1)
     camera_h = lidar_box3d[:, 5].reshape(-1, 1)
     camera_r = lidar_box3d[:, 6].reshape(-1, 1)
+    camera_r = limit_period(camera_r, offset=0.5, period=np.pi*2)
 
     camera_box3d = np.concatenate([camera_x, camera_y, camera_z,
                                   camera_l, camera_h, camera_w, camera_r],

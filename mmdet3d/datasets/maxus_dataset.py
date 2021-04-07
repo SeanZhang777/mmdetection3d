@@ -418,7 +418,7 @@ class MaxusDataset(Custom3DDataset):
                 annos.append(anno)
 
             annos[-1]['sample_idx'] = np.array(
-                [sample_idx] * len(annos[-1]['score']), dtype=np.int64)
+                [sample_idx] * len(annos[-1]['score']), dtype=np.str)
 
             det_annos += annos
 
