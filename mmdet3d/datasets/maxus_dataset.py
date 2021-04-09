@@ -596,7 +596,7 @@ class MaxusDataset(Custom3DDataset):
         if valid_inds.sum() > 0:
             return dict(
                 bbox=box_2d_preds[list(valid_inds)],
-                box3d_camera=box_preds_camera[valid_inds],
+                box3d_camera=box_preds_camera[list(valid_inds)],
                 box3d_lidar=box_preds[valid_inds].tensor.numpy(),
                 scores=scores[valid_inds].numpy(),
                 label_preds=labels[valid_inds].numpy(),
