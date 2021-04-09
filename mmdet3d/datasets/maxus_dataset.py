@@ -312,7 +312,7 @@ class MaxusDataset(Custom3DDataset):
         if isinstance(result_files, dict):
             ap_dict = dict()
             for name, result_files_ in result_files.items():
-                eval_types = ['bbox', 'bev', '3d']
+                eval_types = ['bev', '3d']
                 if 'img' in name:
                     eval_types = ['bbox']
                 ap_result_str, ap_dict_ = maxus_eval(
