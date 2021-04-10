@@ -29,4 +29,3 @@ momentum_config = dict(
 # RepeatDataset with repeat ratio N, thus the actual total epoch
 # number could be Nx40
 total_epochs = 80
-evaluation = dict(interval=1)
