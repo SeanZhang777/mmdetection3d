@@ -154,9 +154,10 @@ class MaxusDataset(Custom3DDataset):
         gt_bboxes_3d = LiDARInstance3DBoxes(gt_bboxes_3d).convert_to(self.box_mode_3d)
         gt_bboxes = annos['bbox']
 
-        selected = self.drop_arrays_by_name(gt_names, ['DontCare'])
+        selected = self.drop_arrays_by_name(gt_names, ['DontCare', 'Others'])
         gt_bboxes = gt_bboxes[selected].astype('float32')
         gt_names = gt_names[selected]
+        gt_bboxes_3d = gt_bboxes_3d[selected]
 
         gt_labels = []
         for cat in gt_names:
