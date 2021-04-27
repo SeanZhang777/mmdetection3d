@@ -8,7 +8,7 @@ model = dict(
     type='MVXFasterRCNN',
     pts_voxel_layer=dict(
         max_num_points=100,
-        point_cloud_range=[-60.0, -32.0, -2.0, 60.0, 32.0, 4.0],
+        point_cloud_range=[-60.0, -60.0, -2.0, 60.0, 60.0, 4.0],
         voxel_size=voxel_size,
         max_voxels=(16000, 16000)),
     pts_voxel_encoder=dict(
@@ -19,10 +19,10 @@ model = dict(
         voxel_size=voxel_size,
         with_cluster_center=True,
         with_voxel_center=True,
-        point_cloud_range=[-60.0, -32.0, -2.0, 60.0, 32.0, 4.0],
+        point_cloud_range=[-60.0, -60.0, -2.0, 60.0, 60.0, 4.0],
         norm_cfg=dict(type='naiveSyncBN1d', eps=1e-3, momentum=0.01)),
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=64, output_shape=[320, 600]),
+        type='PointPillarsScatter', in_channels=64, output_shape=[600, 600]),
     pts_backbone=dict(
         type='SECOND',
         in_channels=64,
@@ -46,7 +46,7 @@ model = dict(
         use_direction_classifier=True,
         anchor_generator=dict(
             type='AlignedAnchor3DRangeGenerator',
-            ranges=[[-60.0, -32.0, 0.0, 60.0, 32.0, 0.0]],
+            ranges=[[-60.0, -60.0, 0.0, 60.0, 60.0, 0.0]],
             scales=[1, 2, 4],
             sizes=[
                 [0.8660, 2.5981, 1.],
