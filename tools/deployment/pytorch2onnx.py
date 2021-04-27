@@ -8,12 +8,15 @@ import onnx
 import onnxruntime as ort
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from mmcv import DictAction
-from mmcv.runner import force_fp32
+from mmcv.runner import force_fp32, auto_fp16
+from mmdet.core import multi_apply
 from mmdet3d.core import bbox3d2result
 from mmdet3d.apis import inference_detector, init_detector
 from mmdet3d.models.voxel_encoders.utils import get_paddings_indicator
 import open3d as o3d
+
 def draw_box_in_3d(boxes, labels):
     #assert len(boxes) == len(labels), "boxes size not equal to labels size"
     obj_color = [[0, 1, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1], [0, 0, 0]]
@@ -88,7 +91,7 @@ def gather_point_features(model, features, num_points, coors):
     return voxel_feats
 
 @force_fp32(out_fp16=True)
-def forward(self,
+def vfe_forward(self,
             voxel_feats,
             img_feats=None,
             img_metas=None):
@@ -110,6 +113,34 @@ def forward(self,
         voxel_feats = vfe(voxel_feats)
 
     return voxel_feats
+
+def anchor_head_forward(self, feats):
+        """Forward pass.
+
+        Args:
+            feats (list[torch.Tensor]): Multi-level features, e.g.,
+                features produced by FPN.
+
+        Returns:
+            tuple[list[torch.Tensor]]: Multi-level class score, bbox \
+                and direction predictions.
+        """
+        conv_cls_list = []
+        conv_box_list = []
+        conv_dir_list = []
+        for feat in feats:
+            conv_cls, conv_box, conv_dir = self.forward_single(feat)
+            # conv_cls_list.append(conv_cls.permute(0, 2, 3, 1).reshape(-1, 4))
+            # conv_box_list.append(conv_box.permute(0, 2, 3, 1).reshape(-1, 7))
+            # conv_dir_list.append(conv_dir.permute(0, 2, 3, 1).reshape(-1, 2))
+            conv_cls_list.append(conv_cls.reshape(1, 32, -1).permute(0, 2, 1))
+            conv_box_list.append(conv_box.reshape(1, 56, -1).permute(0, 2, 1))
+            conv_dir_list.append(conv_dir.reshape(1, 16, -1).permute(0, 2, 1))
+        conv_cls = torch.cat(conv_cls_list, dim=1)
+        conv_box = torch.cat(conv_box_list, dim=1)
+        conv_dir = torch.cat(conv_dir_list, dim=1)
+
+        return (conv_cls, conv_box, conv_dir)
 
 def simple_test(self, points, img_metas, img=None, rescale=False):
     """Extract features of images."""
@@ -140,7 +171,8 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
         #               'coors': {0: 'num_voxels'}},
         export_params=True,
         verbose=True,
-        opset_version=11)
+        opset_version=11,
+        do_constant_folding=True)
 
     # check pfe onnx model
     pfe_model = onnx.load("pfe.onnx")
@@ -157,10 +189,11 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
 
     batch_size = coors[-1, 0] + 1
     scatter_features = self.pts_middle_encoder(voxel_features, coors, batch_size)
-    backbone_features = self.pts_backbone(scatter_features)
-    neck_features = self.pts_neck(backbone_features)
-    outs = self.pts_bbox_head(neck_features)
+    # backbone_features = self.pts_backbone(scatter_features)
+    # neck_features = self.pts_neck(backbone_features)
+    # outs = self.pts_bbox_head(neck_features)
     rpn = nn.Sequential(self.pts_backbone, self.pts_neck, self.pts_bbox_head)
+    #scatter_features = torch.zeros([1, 64, 400, 400], device=scatter_features.device)
     rpn_input = (scatter_features, )
     torch.onnx.export(
         rpn,
@@ -170,7 +203,8 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
         output_names=['conv_cls', 'conv_box', 'conv_dir'],
         export_params=True,
         verbose=True,
-        opset_version=11)
+        opset_version=11,
+        do_constant_folding=True)
 
     # check rpn onnx model
     rpn_model = onnx.load("rpn.onnx")
@@ -180,9 +214,9 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
     rpn_ort_inputs = {rpn_ort_session.get_inputs()[0].name: to_numpy(scatter_features)}
     rpn_ort_outs = rpn_ort_session.run(None, rpn_ort_inputs)
 
-    np.testing.assert_allclose(to_numpy(outs[0][0]), rpn_ort_outs[0], rtol=1e-01, atol=1e-03)
-    np.testing.assert_allclose(to_numpy(outs[1][0]), rpn_ort_outs[1], rtol=1e-01, atol=1e-03)
-    np.testing.assert_allclose(to_numpy(outs[2][0]), rpn_ort_outs[2], rtol=1e-01, atol=1e-03)
+    np.testing.assert_allclose(to_numpy(outs[0]), rpn_ort_outs[0], rtol=1e-01, atol=1e-03)
+    np.testing.assert_allclose(to_numpy(outs[1]), rpn_ort_outs[1], rtol=1e-01, atol=1e-03)
+    np.testing.assert_allclose(to_numpy(outs[2]), rpn_ort_outs[2], rtol=1e-01, atol=1e-03)
     print('rpn model check OK!')
 
     bbox_list = [dict() for i in range(len(img_metas))]
@@ -207,7 +241,8 @@ def pytorch2onnx(config_path,
     # build the model from a config file and a checkpoint file
     model = init_detector(config_path, checkpoint_path, device='cuda:0')
     model.simple_test = types.MethodType(simple_test, model)
-    model.pts_voxel_encoder.forward = types.MethodType(forward, model.pts_voxel_encoder)
+    model.pts_voxel_encoder.forward = types.MethodType(vfe_forward, model.pts_voxel_encoder)
+    model.pts_bbox_head.forward = types.MethodType(anchor_head_forward, model.pts_bbox_head)
     result, data = inference_detector(model, input_pts)
     # show the results in open3d
     boxes = result[0]['pts_bbox']['boxes_3d'].tensor
