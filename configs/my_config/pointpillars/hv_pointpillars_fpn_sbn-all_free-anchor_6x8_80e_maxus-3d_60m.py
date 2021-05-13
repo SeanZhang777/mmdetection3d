@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/hv_pointpillars_fpn_maxus.py',
+    '../_base_/models/hv_pointpillars_fpn_maxus_60m.py',
     '../_base_/datasets/maxus-3d.py', '../_base_/schedules/cyclic_80e.py',
     '../_base_/default_runtime.py'
 ]
@@ -18,7 +18,7 @@ model = dict(
         alpha=0.5,
         anchor_generator=dict(
             type='AlignedAnchor3DRangeGenerator',
-            ranges=[[-60.0, -32.0, 0.0, 60.0, 32.0, 0.0]],
+            ranges=[[-60.0, -60.0, 0.0, 60.0, 60.0, 0.0]],
             scales=[1, 2, 4],
             sizes=[
                 [0.8660, 2.5981, 1.],
