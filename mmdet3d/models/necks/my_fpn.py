@@ -139,15 +139,12 @@ class MY_FPN(nn.Module):
             self.lateral_convs.append(l_conv)
             self.fpn_convs.append(fpn_conv)
 
-        self.upsample_layers = nn.ModuleList()
-        for i in range(self.start_level, self.backbone_end_level-1):
-            us_layer = build_upsample_layer(
-                upsample_cfg,
-                in_channels=out_channels,
-                out_channels=out_channels,
-                kernel_size=2,
-                stride=2)
-            self.upsample_layers.append(us_layer)
+        self.upsample_layer = build_upsample_layer(
+            upsample_cfg,
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=2,
+            stride=2)
 
         # add extra conv layers (e.g., RetinaNet)
         extra_levels = num_outs - self.backbone_end_level + self.start_level
@@ -199,7 +196,7 @@ class MY_FPN(nn.Module):
                 # prev_shape = laterals[i - 1].shape[2:]
                 # laterals[i - 1] += F.interpolate(
                 #     laterals[i], size=prev_shape, **self.upsample_cfg)
-                laterals[i - 1] += self.upsample_layers[i - 1](laterals[i])
+                laterals[i - 1] += self.upsample_layer(laterals[i])
 
         # build outputs
         # part 1: from original levels
