@@ -153,9 +153,9 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
     gathered_features = gather_point_features(self, voxels, num_points, coors)
 
     num_voxels = voxels.shape[0]
-    pad_gather_features = torch.zeros((12000 - num_voxels, 100, 10), dtype=torch.float32).cuda()
+    pad_gather_features = torch.zeros((16000 - num_voxels, 100, 10), dtype=torch.float32).cuda()
     gathered_features = torch.cat([gathered_features, pad_gather_features], dim=0)
-    pad_coors = torch.zeros((12000 - num_voxels, 4), dtype=torch.int32).cuda()
+    pad_coors = torch.zeros((16000 - num_voxels, 4), dtype=torch.int32).cuda()
     coors = torch.cat([coors, pad_coors], dim=0)
 
     gathered_features = torch.unsqueeze(gathered_features, 1)
@@ -189,9 +189,11 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
 
     batch_size = coors[-1, 0] + 1
     scatter_features = self.pts_middle_encoder(voxel_features, coors, batch_size)
-    # backbone_features = self.pts_backbone(scatter_features)
-    # neck_features = self.pts_neck(backbone_features)
-    # outs = self.pts_bbox_head(neck_features)
+    #scatter_features = np.loadtxt("/home/maxus/test/tensor_check/scatter.txt").reshape(1, 64, 320, 600)
+    #scatter_features = torch.Tensor(scatter_features).cuda()
+    backbone_features = self.pts_backbone(scatter_features)
+    neck_features = self.pts_neck(backbone_features)
+    outs = self.pts_bbox_head(neck_features)
     rpn = nn.Sequential(self.pts_backbone, self.pts_neck, self.pts_bbox_head)
     #scatter_features = torch.zeros([1, 64, 400, 400], device=scatter_features.device)
     rpn_input = (scatter_features, )
@@ -219,6 +221,32 @@ def simple_test(self, points, img_metas, img=None, rescale=False):
     np.testing.assert_allclose(to_numpy(outs[2]), rpn_ort_outs[2], rtol=1e-01, atol=1e-03)
     print('rpn model check OK!')
 
+    # conv_cls_all = np.loadtxt("/home/maxus/test/tensor_check/conv_cls_ort.txt", dtype=np.float32).reshape(-1, 32)
+    # conv_box_all = np.loadtxt("/home/maxus/test/tensor_check/conv_box_ort.txt", dtype=np.float32).reshape(-1, 56)
+    # conv_dir_all = np.loadtxt("/home/maxus/test/tensor_check/conv_dir_ort.txt", dtype=np.float32).reshape(-1, 16)
+    # conv_cls_all = outs[0].cpu().numpy().reshape(-1, 32)
+    # conv_box_all = outs[1].cpu().numpy().reshape(-1, 56)
+    # conv_dir_all = outs[2].cpu().numpy().reshape(-1, 16)
+    conv_cls_all = rpn_ort_outs[0].reshape(-1, 32)
+    conv_box_all = rpn_ort_outs[1].reshape(-1, 56)
+    conv_dir_all = rpn_ort_outs[2].reshape(-1, 16)
+    np.savetxt("/home/maxus/test/tensor_check/scatter.txt", scatter_features.cpu().numpy().reshape(64, -1), fmt='%.10f')
+    np.savetxt("/home/maxus/test/tensor_check/conv_cls_ort.txt", conv_cls_all, fmt='%.10f')
+    np.savetxt("/home/maxus/test/tensor_check/conv_box_ort.txt", conv_box_all, fmt='%.10f')
+    np.savetxt("/home/maxus/test/tensor_check/conv_dir_ort.txt", conv_dir_all, fmt='%.10f')
+    conv_cls1 = torch.Tensor(conv_cls_all[:160*300, :].reshape(1, 160, 300, 32)).permute(0, 3, 1, 2)
+    conv_cls2 = torch.Tensor(conv_cls_all[160 * 300:160 * 300+80*150, :].reshape(1, 80, 150, 32)).permute(0, 3, 1, 2)
+    conv_cls3 = torch.Tensor(conv_cls_all[160 * 300+80*150:, :].reshape(1, 40, 75, 32)).permute(0, 3, 1, 2)
+    conv_box1 = torch.Tensor(conv_box_all[:160*300, :].reshape(1, 160, 300, 56)).permute(0, 3, 1, 2)
+    conv_box2 = torch.Tensor(conv_box_all[160 * 300:160 * 300+80*150, :].reshape(1, 80, 150, 56)).permute(0, 3, 1, 2)
+    conv_box3 = torch.Tensor(conv_box_all[160 * 300+80*150:, :].reshape(1, 40, 75, 56)).permute(0, 3, 1, 2)
+    conv_dir1 = torch.Tensor(conv_dir_all[:160*300, :].reshape(1, 160, 300, 16)).permute(0, 3, 1, 2)
+    conv_dir2 = torch.Tensor(conv_dir_all[160 * 300:160 * 300+80*150, :].reshape(1, 80, 150, 16)).permute(0, 3, 1, 2)
+    conv_dir3 = torch.Tensor(conv_dir_all[160 * 300+80*150:, :].reshape(1, 40, 75, 16)).permute(0, 3, 1, 2)
+
+    outs = ([conv_cls1.cuda(), conv_cls2.cuda(), conv_cls3.cuda()],
+            [conv_box1.cuda(), conv_box2.cuda(), conv_box3.cuda()],
+            [conv_dir1.cuda(), conv_dir2.cuda(), conv_dir3.cuda()])
     bbox_list = [dict() for i in range(len(img_metas))]
     bboxes = self.pts_bbox_head.get_bboxes(
         *outs, img_metas, rescale=rescale)
