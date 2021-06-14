@@ -45,7 +45,7 @@ class MaxusDataset(Custom3DDataset):
         pcd_limit_range (list): The range of point cloud used to filter
             invalid predicted boxes. Default: [0, -40, -3, 70.4, 40, 0.0].
     """
-    CLASSES = ('Car', 'Large_Vehicle', 'Pedestrian', 'Cyclist')
+    CLASSES = ('Car', 'Large_Vehicle', 'Pedestrian', 'Cyclist', 'Cone')
 
     def __init__(self,
                  data_root,
@@ -58,7 +58,7 @@ class MaxusDataset(Custom3DDataset):
                  box_type_3d='LiDAR',
                  filter_empty_gt=True,
                  test_mode=False,
-                 pcd_limit_range=[-60.0, -32.0, -3.0, 60.0, 32, 5.0]):
+                 pcd_limit_range=[0.0, -50.0, -3.0, 100.0, 50.0, 5.0]):
         super().__init__(
             data_root=data_root,
             ann_file=ann_file,

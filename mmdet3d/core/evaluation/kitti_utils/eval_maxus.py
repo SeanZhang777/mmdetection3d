@@ -26,7 +26,7 @@ def get_thresholds(scores: np.ndarray, num_gt, num_sample_pts=41):
 
 
 def clean_data(gt_anno, dt_anno, current_class, difficulty):
-    CLASS_NAMES = ['Car', 'Large_Vehicle', 'Pedestrian', 'Cyclist']
+    CLASS_NAMES = ['Car', 'Large_Vehicle', 'Pedestrian', 'Cyclist', 'Cone']
     MIN_HEIGHT = [40, 25, 25]
     MAX_OCCLUSION = [0, 1, 2]
     dc_bboxes, ignored_gt, ignored_dt = [], [], []
@@ -632,18 +632,19 @@ def maxus_eval(gt_annos,
     assert len(eval_types) > 0, 'must contain at least one evaluation type'
     if 'aos' in eval_types:
         assert 'bbox' in eval_types, 'must evaluate bbox when evaluating aos'
-    overlap_0_7 = np.array([[0.7, 0.7, 0.5, 0.5],
-                            [0.7, 0.7, 0.5, 0.5],
-                            [0.7, 0.7, 0.5, 0.5]])
-    overlap_0_5 = np.array([[0.7, 0.7, 0.5, 0.5],
-                            [0.5, 0.5, 0.25, 0.25],
-                            [0.5, 0.5, 0.25, 0.25]])
-    min_overlaps = np.stack([overlap_0_7, overlap_0_5], axis=0)  # [2, 3, 4]
+    overlap_0_7 = np.array([[0.7, 0.7, 0.5, 0.5, 0.5],
+                            [0.7, 0.7, 0.5, 0.5, 0.5],
+                            [0.7, 0.7, 0.5, 0.5, 0.5]])
+    overlap_0_5 = np.array([[0.7, 0.7, 0.5, 0.5, 0.5],
+                            [0.5, 0.5, 0.25, 0.25, 0.25],
+                            [0.5, 0.5, 0.25, 0.25, 0.25]])
+    min_overlaps = np.stack([overlap_0_7, overlap_0_5], axis=0)  # [2, 3, 5]
     class_to_name = {
         0: 'Car',
         1: 'Large_Vehicle',
         2: 'Pedestrian',
         3: 'Cyclist',
+        4: 'Cone',
     }
     name_to_class = {v: n for n, v in class_to_name.items()}
     if not isinstance(current_classes, (list, tuple)):
